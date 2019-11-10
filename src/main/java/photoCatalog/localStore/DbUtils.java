@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.ZonedDateTime;
 
 public class DbUtils {
 
@@ -37,6 +38,29 @@ public class DbUtils {
 
 	public int executeUpdate(String sql) throws SQLException {
 		return executeUpdate(this.connection, sql);
+	}
+
+	public static ZonedDateTime getDate(String fieldValue) {
+		return ZonedDateTime.parse(fieldValue);
+	}
+	
+	public static String getParams(int number) {
+		StringBuilder sb = new StringBuilder();
+		String sep = "";
+		for (int i=0; i<number; i++) {
+			sb.append(sep);
+			sb.append('?');
+			sep = ", ";
+		}
+		return sb.toString();
+	}
+
+	public static String getFieldValue(ZonedDateTime date) {
+		if (date == null) {
+			return null;
+		}
+		// TODO fix date to UTC ISO format 
+		return date.toString();
 	}
 
 }
