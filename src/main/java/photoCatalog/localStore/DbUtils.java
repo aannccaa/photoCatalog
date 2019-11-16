@@ -4,7 +4,11 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class DbUtils {
 
@@ -41,13 +45,21 @@ public class DbUtils {
 	}
 
 	public static ZonedDateTime getDate(String fieldValue) {
-		return ZonedDateTime.parse(fieldValue);
+		if(fieldValue == null) {
+			return null;
+		}
+		LocalDateTime l = LocalDateTime.parse(fieldValue, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+		ZonedDateTime zu = ZonedDateTime.of(l, ZoneOffset.UTC);
+
+		ZonedDateTime zz = zu.withZoneSameInstant(ZoneId.systemDefault());
+		return zz;
 	}
-	
+
 	public static String getParams(int number) {
 		StringBuilder sb = new StringBuilder();
 		String sep = "";
-		for (int i=0; i<number; i++) {
+		for (int i = 0; i < number; i++) {
 			sb.append(sep);
 			sb.append('?');
 			sep = ", ";
@@ -59,8 +71,14 @@ public class DbUtils {
 		if (date == null) {
 			return null;
 		}
-		// TODO fix date to UTC ISO format 
-		return date.toString();
+		ZonedDateTime utc = date.withZoneSameInstant(ZoneOffset.UTC);
+
+		LocalDateTime utcL = utc.toLocalDateTime();
+
+		DateTimeFormatter f = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
+		String s = utcL.format(f);
+		return s;
 	}
 
 }
