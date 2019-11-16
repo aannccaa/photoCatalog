@@ -1,0 +1,9 @@
+- creaza functiile care gestioneaza PHOTOIDS: 
+eg: (getPhotoByProviderID, setProviderID(Photo), deleteProviderID(Photo),
+
+- gestionat directoarele/fisierele de poze
+
+- creaza functii de cautare in local store (dupa diverse criterii)
+
+- creaza functii de nivel inalt care gestioneaza local store:
+eg: update photo in local store (bazat pe informatiile de la poza dowloadata de la provider)
