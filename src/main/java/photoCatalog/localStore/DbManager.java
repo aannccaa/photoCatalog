@@ -12,8 +12,6 @@ public class DbManager {
 	public static final int IN_UPDATE_VERSION = -1;
 	public static final int CURRENT_VERSION = 1;
 
-
-
 	private String dbFileName;
 	private Connection connection;
 
@@ -32,23 +30,27 @@ public class DbManager {
 		String dbUrl = DbUtils.getConnectionURL(dbFileName);
 		this.connection = DriverManager.getConnection(dbUrl);
 		String sql = "PRAGMA encoding = 'UTF-8'";
-		DbUtils.executeUpdate(connection, sql);				
+		DbUtils.executeUpdate(connection, sql);
 	}
 
 	public int getDbVersion() throws SQLException {
 		String sql = "SELECT name FROM sqlite_master WHERE type='table' and name = 'DBPROPERTIES'";
 		ResultSet rs = DbUtils.executeQuery(this.connection, sql);
-		if (!rs.next()) {
-			return EMPTY_VERSION;
-		} else {
-			sql = "SELECT value FROM DBPROPERTIES WHERE name = 'DBVERSION";
-			rs = DbUtils.executeQuery(this.connection, sql);
+		try {
 			if (!rs.next()) {
-				throw new SQLException("Invalid db");
+				return EMPTY_VERSION;
+			} else {
+				sql = "SELECT value FROM DBPROPERTIES WHERE name = 'DBVERSION";
+				rs = DbUtils.executeQuery(this.connection, sql);
+				if (!rs.next()) {
+					throw new SQLException("Invalid db");
+				}
+				// returnez prima coloana din rezultat
+				int version = Integer.parseInt(rs.getString(1));
+				return version;
 			}
-			// returnez prima coloana din rezultat
-			int version = Integer.parseInt(rs.getString(1));
-			return version;
+		} finally {
+			DbUtils.close(rs);
 		}
 	}
 

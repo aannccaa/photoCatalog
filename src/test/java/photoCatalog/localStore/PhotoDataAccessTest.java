@@ -152,6 +152,39 @@ public class PhotoDataAccessTest extends DbManagerBaseTest {
 		Assert.assertEquals(photo1Modified, photo1ModifiedFromDb);
 	}
 
+	@Test
+	public void testDeletePhoto() {
+		Photo photo1 = createPhotoNr1();
+
+		PhotoDataAccess pda = new PhotoDataAccess(this.connection);
+		Photo photoInDb = null;
+
+		try {
+			pda.insertPhoto(photo1);
+			photoInDb = pda.getPhoto(photo1.getUniversalId());
+
+		} catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+		// check photo1 was inserted in db
+		Assert.assertEquals(photo1, photoInDb);
+
+		// delete photo1 from db
+		try {
+			pda.deletePhoto(photo1.getUniversalId());
+		} catch (SQLException e) {
+			Assert.fail(e.getMessage());
+		}
+		try {
+			photoInDb = pda.getPhoto(photo1.getUniversalId());
+		} catch (SQLException e) {
+			Assert.fail(e.getMessage());
+		}
+		// the photo in db should no longer exist
+		Assert.assertEquals(photoInDb, null);
+
+	}
+
 	private String getTempDbFileName() {
 		return this.getTempDbFileName(tempFolder, "a.db");
 	}

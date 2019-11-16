@@ -50,6 +50,7 @@ public class PhotoDataAccess {
 
 	/**
 	 * return a photo from db
+	 * 
 	 * @param universalId
 	 * @return photo from db, or null
 	 * @throws SQLException
@@ -58,16 +59,23 @@ public class PhotoDataAccess {
 		String fields = String.join(",", getPhotoFields());
 		String sql = "SELECT " + fields + " from PHOTOS WHERE universalid=?";
 		PreparedStatement ps = this.connection.prepareStatement(sql);
-		// setez param (numerotati de la 1)
-		ps.setString(1, universalId);
-		ResultSet rs = ps.executeQuery();
-		// if select returned nothing
-		if (!rs.next()) {
-			return null;
-		}
-		Photo result = load(rs);
+		ResultSet rs = null;
+		try {
+			// setez param (numerotati de la 1)
+			ps.setString(1, universalId);
+			rs = ps.executeQuery();
 
-		return result;
+			// if select returned nothing
+			if (!rs.next()) {
+				return null;
+			}
+			Photo result = load(rs);
+
+			return result;
+		} finally {
+			DbUtils.close(rs);
+			DbUtils.close(ps);
+		}
 	}
 
 	/**
@@ -84,24 +92,28 @@ public class PhotoDataAccess {
 		String sql = "INSERT INTO PHOTOS" +
 				" (" + fields + ") " +
 				"VALUES (" + paramsString + ")";
+
 		PreparedStatement ps = this.connection.prepareStatement(sql);
+		try {
+			// setez params (numerotati de la 1)
+			ps.setString(photoFields.indexOf(universalid) + 1, photo.getUniversalId());
+			ps.setString(photoFields.indexOf(title) + 1, photo.getTitle());
+			ps.setString(photoFields.indexOf(description) + 1, photo.getDescription());
+			ps.setString(photoFields.indexOf(filename) + 1, photo.getFileName());
+			ps.setString(photoFields.indexOf(localpath) + 1, photo.getLocalPath());
+			ps.setString(photoFields.indexOf(datetaken) + 1, DbUtils.getFieldValue(photo.getDateTaken()));
+			ps.setString(photoFields.indexOf(datemodified) + 1, DbUtils.getFieldValue(photo.getDateModified()));
+			ps.setInt(photoFields.indexOf(width) + 1, photo.getWidth());
+			ps.setInt(photoFields.indexOf(height) + 1, photo.getHeight());
+			ps.setInt(photoFields.indexOf(rotate) + 1, photo.getRotate());
 
-		// setez params (numerotati de la 1)
-		ps.setString(photoFields.indexOf(universalid) + 1, photo.getUniversalId());
-		ps.setString(photoFields.indexOf(title) + 1, photo.getTitle());
-		ps.setString(photoFields.indexOf(description) + 1, photo.getDescription());
-		ps.setString(photoFields.indexOf(filename) + 1, photo.getFileName());
-		ps.setString(photoFields.indexOf(localpath) + 1, photo.getLocalPath());
-		ps.setString(photoFields.indexOf(datetaken) + 1, DbUtils.getFieldValue(photo.getDateTaken()));
-		ps.setString(photoFields.indexOf(datemodified) + 1, DbUtils.getFieldValue(photo.getDateModified()));
-		ps.setInt(photoFields.indexOf(width) + 1, photo.getWidth());
-		ps.setInt(photoFields.indexOf(height) + 1, photo.getHeight());
-		ps.setInt(photoFields.indexOf(rotate) + 1, photo.getRotate());
-
-		// result is an integer (nb of rows inserted)
-		int rows = ps.executeUpdate();
-		if (rows != 1) {
-			throw new SQLException("photo not inserted");
+			// result is an integer (nb of rows inserted)
+			int rows = ps.executeUpdate();
+			if (rows != 1) {
+				throw new SQLException("photo not inserted in db");
+			}
+		} finally {
+			DbUtils.close(ps);
 		}
 	}
 
@@ -119,22 +131,25 @@ public class PhotoDataAccess {
 
 		String sql = "UPDATE PHOTOS SET " + fields + " WHERE universalid = ?";
 		PreparedStatement ps = this.connection.prepareStatement(sql);
+		try {
+			// setez params (numerotati de la 1)
+			ps.setString(photoFields.indexOf(universalid) + 1, photo.getUniversalId());
+			ps.setString(photoFields.indexOf(title) + 1, photo.getTitle());
+			ps.setString(photoFields.indexOf(description) + 1, photo.getDescription());
+			ps.setString(photoFields.indexOf(filename) + 1, photo.getFileName());
+			ps.setString(photoFields.indexOf(localpath) + 1, photo.getLocalPath());
+			ps.setString(photoFields.indexOf(datetaken) + 1, DbUtils.getFieldValue(photo.getDateTaken()));
+			ps.setString(photoFields.indexOf(datemodified) + 1, DbUtils.getFieldValue(photo.getDateModified()));
+			ps.setInt(photoFields.indexOf(width) + 1, photo.getWidth());
+			ps.setInt(photoFields.indexOf(height) + 1, photo.getHeight());
+			ps.setInt(photoFields.indexOf(rotate) + 1, photo.getRotate());
 
-		// setez params (numerotati de la 1)
-		ps.setString(photoFields.indexOf(universalid) + 1, photo.getUniversalId());
-		ps.setString(photoFields.indexOf(title) + 1, photo.getTitle());
-		ps.setString(photoFields.indexOf(description) + 1, photo.getDescription());
-		ps.setString(photoFields.indexOf(filename) + 1, photo.getFileName());
-		ps.setString(photoFields.indexOf(localpath) + 1, photo.getLocalPath());
-		ps.setString(photoFields.indexOf(datetaken) + 1, DbUtils.getFieldValue(photo.getDateTaken()));
-		ps.setString(photoFields.indexOf(datemodified) + 1, DbUtils.getFieldValue(photo.getDateModified()));
-		ps.setInt(photoFields.indexOf(width) + 1, photo.getWidth());
-		ps.setInt(photoFields.indexOf(height) + 1, photo.getHeight());
-		ps.setInt(photoFields.indexOf(rotate) + 1, photo.getRotate());
-
-		ps.setString(photoFields.size() + 1, photo.getUniversalId());
-		if (ps.executeUpdate() != 1) {
-			throw new SQLException("photo not updated !!");
+			ps.setString(photoFields.size() + 1, photo.getUniversalId());
+			if (ps.executeUpdate() != 1) {
+				throw new SQLException("photo not updated !!");
+			}
+		} finally {
+			DbUtils.close(ps);
 		}
 	}
 
@@ -151,6 +166,23 @@ public class PhotoDataAccess {
 		photo.setHeight(rs.getInt((height)));
 		photo.setRotate(rs.getInt((rotate)));
 		return photo;
+	}
+
+	public void deletePhoto(String universalId) throws SQLException {
+		String sql = "DELETE FROM PHOTOS WHERE universalid=?";
+		PreparedStatement ps = this.connection.prepareStatement(sql);
+		try {
+			ps.setString(1, universalId);
+			int rows = ps.executeUpdate();
+
+			// result is an integer (nb of rows deleted)
+			if (rows != 1) {
+				throw new SQLException("photo not deleted from db");
+			}
+		} finally {
+			DbUtils.close(ps);
+		}
+
 	}
 
 }

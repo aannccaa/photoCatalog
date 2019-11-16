@@ -35,9 +35,13 @@ public class DbUtils {
 
 	public static int executeUpdate(Connection connection, String sql) throws SQLException {
 		Statement statement = connection.createStatement();
-		// rezultatul e numarul de linii modificate in baza
-		int result = statement.executeUpdate(sql);
-		return result;
+		try {
+			// rezultatul e numarul de linii modificate in baza
+			int result = statement.executeUpdate(sql);
+			return result;
+		} finally {
+			DbUtils.close(statement);
+		}
 	}
 
 	public int executeUpdate(String sql) throws SQLException {
@@ -45,7 +49,7 @@ public class DbUtils {
 	}
 
 	public static ZonedDateTime getDate(String fieldValue) {
-		if(fieldValue == null) {
+		if (fieldValue == null) {
 			return null;
 		}
 		LocalDateTime l = LocalDateTime.parse(fieldValue, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -79,6 +83,28 @@ public class DbUtils {
 
 		String s = utcL.format(f);
 		return s;
+	}
+
+	public static void close(Statement statement) {
+		if (statement != null) {
+			try {
+				statement.close();
+			} catch (SQLException e) {
+				// TODO log
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public static void close(ResultSet rs) {
+		if (rs != null) {
+			try {
+				rs.close();
+			} catch (SQLException e) {
+				// TODO log
+				e.printStackTrace();
+			}
+		}
 	}
 
 }

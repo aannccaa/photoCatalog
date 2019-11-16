@@ -8,7 +8,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-public class TestDbManager extends DbManagerBaseTest{
+public class DbManagerTest extends DbManagerBaseTest{
 
 	@Rule
 	public TemporaryFolder tempFolder = new TemporaryFolder();
