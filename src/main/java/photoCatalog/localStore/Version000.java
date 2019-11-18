@@ -38,10 +38,10 @@ public class Version000 extends DbUpgrade {
 		db.executeUpdate(sql);
 
 		sql = "CREATE TABLE PHOTOIDS ("
-				+ " universalid TEXT NOT NULL"
-				+ ",provider TEXT NOT NULL"
-				+ ",id TEXT NOT NULL"
-				+ ",PRIMARY KEY (universalid, provider, id)"
+				+ " provider TEXT NOT NULL"
+				+ ",photoid TEXT NOT NULL"
+				+ ",universalid TEXT NOT NULL"
+				+ ",PRIMARY KEY (provider, photoid)"
 				+ ")";
 		db.executeUpdate(sql);
 

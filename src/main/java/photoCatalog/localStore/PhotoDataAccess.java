@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.sqlite.SQLiteException;
+
 import photoCatalog.model.Photo;
 
 public class PhotoDataAccess {
@@ -24,22 +26,39 @@ public class PhotoDataAccess {
 
 	private static ArrayList<String> photoFields;
 
+	/**
+	 * get the list of fields of PHOTOS TABLE
+	 * 
+	 * @return
+	 */
 	public static ArrayList<String> getPhotoFields() {
 		if (photoFields == null) {
-			photoFields = new ArrayList<String>();
-
-			photoFields.add(universalid);
-			photoFields.add(title);
-			photoFields.add(description);
-			photoFields.add(filename);
-			photoFields.add(localpath);
-			photoFields.add(datetaken);
-			photoFields.add(datemodified);
-			photoFields.add(width);
-			photoFields.add(height);
-			photoFields.add(rotate);
+			photoFields = getPhotoFields(null);
 		}
 		return photoFields;
+	}
+
+	/**
+	 * get the list of fields of PHOTOS TABLE
+	 * 
+	 * @return
+	 */
+	public static ArrayList<String> getPhotoFields(String tablePrefix) {
+		String prefix = tablePrefix == null ? "" : tablePrefix + ".";
+		ArrayList<String> fields = new ArrayList<String>();
+
+		fields.add(prefix + universalid);
+		fields.add(prefix + title);
+		fields.add(prefix + description);
+		fields.add(prefix + filename);
+		fields.add(prefix + localpath);
+		fields.add(prefix + datetaken);
+		fields.add(prefix + datemodified);
+		fields.add(prefix + width);
+		fields.add(prefix + height);
+		fields.add(prefix + rotate);
+
+		return fields;
 	}
 
 	private Connection connection;
@@ -57,7 +76,7 @@ public class PhotoDataAccess {
 	 */
 	public Photo getPhoto(String universalId) throws SQLException {
 		String fields = String.join(",", getPhotoFields());
-		String sql = "SELECT " + fields + " from PHOTOS WHERE universalid=?";
+		String sql = "SELECT " + fields + " FROM PHOTOS WHERE universalid=?";
 		PreparedStatement ps = this.connection.prepareStatement(sql);
 		ResultSet rs = null;
 		try {
@@ -76,6 +95,82 @@ public class PhotoDataAccess {
 			DbUtils.close(rs);
 			DbUtils.close(ps);
 		}
+	}
+
+	public Photo getPhotoByProviderID(String provider, String photoId) throws SQLException {
+		String fields = String.join(",", getPhotoFields("P"));
+		String sql = "SELECT " + fields + " FROM " +
+				"PHOTOIDS I " +
+				"JOIN PHOTOS P ON P.universalid=I.universalid " +
+				"WHERE I.provider = ? and I.photoid = ? ";
+		PreparedStatement ps = this.connection.prepareStatement(sql);
+		ResultSet rs = null;
+		try {
+			// setez param (numerotati de la 1)
+			ps.setString(1, provider);
+			ps.setString(2, photoId);
+			rs = ps.executeQuery();
+
+			// if select returned nothing
+			if (!rs.next()) {
+				return null;
+			}
+			Photo result = load(rs);
+
+			return result;
+		} finally {
+			DbUtils.close(rs);
+			DbUtils.close(ps);
+		}
+	}
+
+	/**
+	 * Asociaza un universalId cu perechea provider/photoId
+	 * Daca exista deja un alt universalId asociat, exceptie
+	 * @param universalId
+	 * @param provider
+	 * @param photoId
+	 * @throws SQLException
+	 */
+	public void setPhotoId(String universalId, String provider, String photoId) throws SQLException {
+
+		ResultSet rs = null;
+		String sql = "INSERT INTO PHOTOIDS (provider, photoid, universalid) VALUES (?, ?, ?)";
+		PreparedStatement ps = this.connection.prepareStatement(sql);
+		int result;
+		try {
+			ps.setString(1, provider);
+			ps.setString(2, photoId);
+			ps.setString(3, universalId);
+			try {
+				result = ps.executeUpdate();
+				if (result == 1) {
+					return;
+				}
+			} catch (SQLException e) {
+				// SQLLiteError 19 : CONSTRAINT VIOLATION
+				// Violare de cheie
+				if (e.getErrorCode() != 19) {
+					throw e;
+				}
+			}
+			DbUtils.close(ps);
+			sql = "SELECT universalid FROM PHOTOIDS WHERE provider = ? AND photoid = ?";
+			ps = this.connection.prepareStatement(sql);
+			ps.setString(1, provider);
+			ps.setString(2, photoId);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				String inDbUniversalId = rs.getString(1);
+				if (!inDbUniversalId.equals(universalId)) {
+					throw new SQLException("different photoId in db");
+				}
+			}
+		} finally {
+			DbUtils.close(rs);
+			DbUtils.close(ps);
+		}
+
 	}
 
 	/**

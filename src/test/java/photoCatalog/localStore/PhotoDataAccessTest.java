@@ -185,6 +185,18 @@ public class PhotoDataAccessTest extends DbManagerBaseTest {
 
 	}
 
+	@Test
+	public void setPhotoIdViolationTest() {
+		PhotoDataAccess pda = new PhotoDataAccess(this.connection);
+		try {
+			pda.setPhotoId("1", "flickr", "1");
+			pda.setPhotoId("2", "flickr", "1");
+
+		} catch (SQLException e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
 	private String getTempDbFileName() {
 		return this.getTempDbFileName(tempFolder, "a.db");
 	}
