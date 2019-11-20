@@ -5,13 +5,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
-
-import org.sqlite.SQLiteException;
 
 import photoCatalog.model.Photo;
 
 public class PhotoDataAccess {
+	public static final String Flickr = "flickr";
+
 	// fields in Photos table (final as their name is not changeable)
 	public static final String universalid = "universalid";
 	public static final String title = "title";
@@ -125,8 +124,9 @@ public class PhotoDataAccess {
 	}
 
 	/**
-	 * Asociaza un universalId cu perechea provider/photoId
-	 * Daca exista deja un alt universalId asociat, exceptie
+	 * Asociaza un universalId cu perechea provider/photoId Daca exista deja un alt
+	 * universalId asociat, exceptie
+	 * 
 	 * @param universalId
 	 * @param provider
 	 * @param photoId
@@ -137,6 +137,7 @@ public class PhotoDataAccess {
 		ResultSet rs = null;
 		String sql = "INSERT INTO PHOTOIDS (provider, photoid, universalid) VALUES (?, ?, ?)";
 		PreparedStatement ps = this.connection.prepareStatement(sql);
+		SQLException foreignKeyViolation = null;
 		int result;
 		try {
 			ps.setString(1, provider);
@@ -152,6 +153,8 @@ public class PhotoDataAccess {
 				// Violare de cheie
 				if (e.getErrorCode() != 19) {
 					throw e;
+				} else {
+					foreignKeyViolation = e;
 				}
 			}
 			DbUtils.close(ps);
@@ -164,6 +167,12 @@ public class PhotoDataAccess {
 				String inDbUniversalId = rs.getString(1);
 				if (!inDbUniversalId.equals(universalId)) {
 					throw new SQLException("different photoId in db");
+				}
+			} else {
+				if (foreignKeyViolation != null) {
+					throw foreignKeyViolation;
+				} else {
+					throw new SQLException("imposible to have this exception");
 				}
 			}
 		} finally {
@@ -280,4 +289,19 @@ public class PhotoDataAccess {
 
 	}
 
+	public void deletePhotoId(String provider, String photoId) throws SQLException {
+		String sql = "DELETE FROM PHOTOIDS WHERE provider = ? AND photoid = ?";
+		PreparedStatement ps = this.connection.prepareStatement(sql);
+		try {
+			ps.setString(1, provider);
+			ps.setString(2, photoId);
+			int rows = ps.executeUpdate();
+
+			if (rows != 1) {
+				throw new SQLException("photoid not deleted from PHOTOIDS table");
+			}
+		} finally {
+			DbUtils.close(ps);
+		}
+	}
 }

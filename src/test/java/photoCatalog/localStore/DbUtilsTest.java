@@ -8,19 +8,19 @@ import org.junit.Test;
 public class DbUtilsTest {
 
 	@Test
-	public void testGetDate() {
+	public void getDateTest_TODO() {
 		fail("Not yet implemented");
 	}
 
 	@Test
-	public void testGetParams() {
+	public void getParamsTest() {
 		String actual = DbUtils.getParams(3);
 		String expected = "?, ?, ?";
 		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
-	public void testGetFieldValue() {
+	public void getFieldValueTest_TODO() {
 		fail("Not yet implemented");
 	}
 

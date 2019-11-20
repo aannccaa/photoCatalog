@@ -12,6 +12,8 @@ public class Version000 extends DbUpgrade {
 	public void upgrade() throws Exception {
 		DbUtils db = new DbUtils(this.connection);
 		String sql;
+		sql = "PRAGMA foreign_keys = 1";
+		db.executeUpdate(sql);
 		sql = "CREATE TABLE DBPROPERTIES(name STRING PRIMARY KEY, value STRING)";
 		db.executeUpdate(sql);
 
@@ -42,7 +44,11 @@ public class Version000 extends DbUpgrade {
 				+ ",photoid TEXT NOT NULL"
 				+ ",universalid TEXT NOT NULL"
 				+ ",PRIMARY KEY (provider, photoid)"
+				+ ",FOREIGN KEY (universalid) REFERENCES PHOTOS(universalid)"
+				+ " ON DELETE RESTRICT ON UPDATE RESTRICT"
 				+ ")";
+		
+		
 		db.executeUpdate(sql);
 
 		// setam versiuna reala

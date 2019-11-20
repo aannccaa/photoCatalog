@@ -1,3 +1,5 @@
+- de inteles PhotoDataAccess.setPhotoId()
+
 - creaza functiile care gestioneaza PHOTOIDS: 
 eg: (getPhotoByProviderID, setProviderID(Photo), deleteProviderID(Photo),
 

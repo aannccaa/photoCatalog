@@ -153,7 +153,7 @@ public class PhotoDataAccessTest extends DbManagerBaseTest {
 	}
 
 	@Test
-	public void testDeletePhoto() {
+	public void deletePhotoTest1() {
 		Photo photo1 = createPhotoNr1();
 
 		PhotoDataAccess pda = new PhotoDataAccess(this.connection);
@@ -182,15 +182,80 @@ public class PhotoDataAccessTest extends DbManagerBaseTest {
 		}
 		// the photo in db should no longer exist
 		Assert.assertEquals(photoInDb, null);
+	}
 
+	// pt o foto care are un potoid flickr in PHOTOIDS, de testat ca nu se poate
+	// sterge foto din PHOTOS
+	@Test
+	public void deletePhotoTest2() {
+		Photo photo1 = createPhotoNr1();
+
+		PhotoDataAccess pda = new PhotoDataAccess(this.connection);
+		Photo photoInDb = null;
+
+		try {
+			pda.insertPhoto(photo1);
+			photoInDb = pda.getPhoto(photo1.getUniversalId());
+
+		} catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+		// check photo1 was inserted in db
+		Assert.assertEquals(photo1, photoInDb);
+
+		String flickrPhotoId = "1";
+		// insert photoid
+		try {
+			pda.setPhotoId(photo1.getUniversalId(), PhotoDataAccess.Flickr, flickrPhotoId);
+		} catch (SQLException e) {
+			Assert.fail(e.getMessage());
+		}
+		// delete photo1 from db
+		try {
+			pda.deletePhoto(photo1.getUniversalId());
+			Assert.fail("problema, nu trebuia stearsa poza pt care are un photoid asociat");
+		} catch (SQLException e) {
+			//ok
+		}
+
+		// sterg photoid, dupa care trebuie sa pot sterge inregistrearea
+		try {
+			pda.deletePhotoId(PhotoDataAccess.Flickr, flickrPhotoId);
+		} catch (SQLException e) {
+			Assert.fail(e.getMessage());
+		}
+
+		// trebuie sa pot sterge poza
+		try {
+			pda.deletePhoto(photo1.getUniversalId());
+		} catch (SQLException e) {
+			Assert.fail(e.getMessage());
+		}
+
+		try {
+			photoInDb = pda.getPhoto(photo1.getUniversalId());
+		} catch (SQLException e) {
+			Assert.fail(e.getMessage());
+		}
+
+		// the photo in db should no longer exist
+		Assert.assertEquals(photoInDb, null);
 	}
 
 	@Test
 	public void setPhotoIdViolationTest() {
 		PhotoDataAccess pda = new PhotoDataAccess(this.connection);
 		try {
+			DbUtils.executeUpdate(connection, "INSERT INTO PHOTOS (universalid) VALUES('1')");
+			// perechea provider si photoid e PK
 			pda.setPhotoId("1", "flickr", "1");
-			pda.setPhotoId("2", "flickr", "1");
+			try {
+				pda.setPhotoId("2", "flickr", "1");
+				// linia precedenta trebuie sa dea exceptie, pe linia asta nu se poate ajunge
+				Assert.fail("Not allowed to modify universalid reference for photoid");
+			} catch (SQLException e) {
+				// este ok sa am exceceptie
+			}
 
 		} catch (SQLException e) {
 			Assert.fail(e.getMessage());
